@@ -1,11 +1,13 @@
 const utils = require('../../../utils')
 const std = require('../../../standards')
+const authNumStd = std.authNum
 
 module.exports = {
     validation: () => {
         return (req, res, next) => {
             let body = req.body
 
+            // 필수값 체크
             if (body.type === undefined || body.key === undefined) {
                 res.status = 400
                 return res.json({
@@ -13,36 +15,36 @@ module.exports = {
                 })
             }
 
-            if (body.type !== "email" && body.type !== "phone") {
+            if (body.type !== authNumStd.authNumTypeEmail && body.type !== authNumStd.authNumTypePhone) {
                 res.status = 400
                 return res.json({
                     code: "400_1"
                 })
             }
 
-            if (body.type === "email") {
-                let emailRegExp = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/i;
-                let isEmailValidKey = emailRegExp.exec(body.key)
+            let regExp = null
+            let code = null
+            if (body.type === authNumStd.authNumTypeEmail) {
+                regExp = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/i;
+                code = "400_3"
+            } else if (body.type === authNumStd.authNumTypePhone) {
+                regExp = /^\d{3}-\d{3,4}-\d{4}$/;
+                code = "400_4"
+            } else {
+                console.error("type error!")
+            }
 
-                if (!isEmailValidKey) {
+            if (regExp !== null) {
+                const isValidKey = regExp.exec(body.key)
+
+                if (!isValidKey) {
                     res.status = 400
                     return res.json({
-                        code: "400_3"
-                    })
-                }
-
-            } else if (body.type === "phone") {
-                let phoneRegExp = /^\d{3}-\d{3,4}-\d{4}$/;
-                let isPhoneValidKey = phoneRegExp.exec(body.key)
-
-                if (!isPhoneValidKey) {
-                    res.status = 400
-                    return res.json({
-                        code: "400_4"
+                        code: code
                     })
                 }
             } else {
-                console.log("type error!")
+                console.error("type error!")
             }
 
             next()
